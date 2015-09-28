@@ -4,7 +4,6 @@ import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -13,6 +12,11 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+
+import static android.provider.ContactsContract.CommonDataKinds.Email;
+import static android.provider.ContactsContract.CommonDataKinds.Phone;
+import static android.provider.ContactsContract.Contacts;
+import static android.provider.ContactsContract.Data;
 
 public class ContactsList extends AppCompatActivity {
 
@@ -33,25 +37,23 @@ public class ContactsList extends AppCompatActivity {
         String email = null;
 
         // Contacts Content URI
-        Uri CONTENT_URI = ContactsContract.Contacts.CONTENT_URI;
+        Uri CONTENT_URI = Contacts.CONTENT_URI;
         Uri RAW_CONTENT_URI = RawContacts.CONTENT_URI;
-        Uri PhoneCONTENT_URI = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+        Uri PhoneCONTENT_URI = Phone.CONTENT_URI;
 
 
-        String _ID = ContactsContract.Contacts._ID;
-        String DISPLAY_NAME = ContactsContract.Contacts.DISPLAY_NAME;
-        String HAS_PHONE_NUMBER = ContactsContract.Contacts.HAS_PHONE_NUMBER;
-        String LAST_TIME_CONTACTED = ContactsContract.Contacts.LAST_TIME_CONTACTED;
+        String _ID = Contacts._ID;
+        String DISPLAY_NAME = Contacts.DISPLAY_NAME;
+        String HAS_PHONE_NUMBER = Contacts.HAS_PHONE_NUMBER;
+        String LAST_TIME_CONTACTED = Contacts.LAST_TIME_CONTACTED;
 
 
-        String Phone_CONTACT_ID = ContactsContract.CommonDataKinds.Phone.CONTACT_ID;
-        String NUMBER = ContactsContract.CommonDataKinds.Phone.NUMBER;
+        String Phone_CONTACT_ID = Phone.CONTACT_ID;
+        String NUMBER = Phone.NUMBER;
 
-        Uri EmailCONTENT_URI = ContactsContract.CommonDataKinds.Email.CONTENT_URI;
-        String EmailCONTACT_ID = ContactsContract.CommonDataKinds.Email.CONTACT_ID;
-        String DATA = ContactsContract.CommonDataKinds.Email.DATA;
-
-//        StringBuffer output = new StringBuffer();
+        Uri EmailCONTENT_URI = Email.CONTENT_URI;
+        String EmailCONTACT_ID = Email.CONTACT_ID;
+        String DATA = Email.DATA;
 
         ContentResolver contentResolver = getContentResolver();
 
@@ -59,7 +61,7 @@ public class ContactsList extends AppCompatActivity {
 
         ArrayList<String> mContactsId = new ArrayList<>();
 
-        // Contacts Query
+        // Query ContactsContract.Contacts table
         if (cursor.getCount() > 0) {
 
             while (cursor.moveToNext()) {
@@ -79,7 +81,7 @@ public class ContactsList extends AppCompatActivity {
                 }
             }
 
-            // RawContacts Query
+            // Query ContactsContract.RawContacts table
 //        Uri entityUri = Uri.withAppendedPath(RAW_CONTENT_URI, RawContacts.Entity.CONTENT_DIRECTORY);
             Cursor c = getContentResolver().query(RAW_CONTENT_URI,
                     new String[]{RawContacts.CONTACT_ID, RawContacts.DELETED, RawContacts._ID}, null, null, null);
@@ -87,7 +89,6 @@ public class ContactsList extends AppCompatActivity {
                 try {
                     while (c.moveToNext()) {
                         String sourceId = c.getString(2);
-//                            if (Integer.parseInt(sourceId) < 1000) {
                         Log.d("MYID", "Contact_ID: " + c.getColumnName(2));
 //                    Log.d("MYID", "Raw Contact_ID: " + c.getColumnName(3));
                         Log.d("RAW", "Raw sourceId: " + sourceId.getClass());
@@ -101,7 +102,22 @@ public class ContactsList extends AppCompatActivity {
             }
         }
 
-
+        // Query for ContactsContract.Data table
+        Cursor c2 = getContentResolver().query(Data.CONTENT_URI,
+                new String[]{Data._ID, Phone.NUMBER,
+                        Phone.TYPE, Phone.LABEL, Data.RAW_CONTACT_ID},
+                null,
+                null, null);
+        if (c2.getCount() > 0) {
+            while (c2.moveToNext()) {
+                Log.d("MYNEWID", "ContactsContract_ID: " + c2.getString(0));
+                Log.d("MYNEWID", "ContactsContract_ID: " + c2.getColumnName(0));
+                Log.d("MYNEWID", "RAW_CONTACT_ID: " + c2.getString(4));
+                Log.d("MYNEWID", "RAW_CONTACT_ID: " + c2.getColumnName(4));
+                Log.d("MYNEWID", "NUMBER: " + c2.getString(1));
+                Log.d("MYNEWID", "--------------------------------");
+            }
+        }
         Log.d("MYID", "mContactsId: " + mContactsId);
     }
 
