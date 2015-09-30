@@ -8,7 +8,6 @@ import android.provider.ContactsContract.RawContacts;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -75,21 +74,7 @@ public class ContactsList extends AppCompatActivity {
                                 String deletedEntity = c1.getString(4);
                                 String mimetype = c1.getString(5);
                                 String mimetypecol = c1.getColumnName(5);
-
-                                Log.d("RawContactsEntity", "RawContacts._ID: " + sourceId);
-                                Log.d("RawContactsEntity", "Raw _ID: " + id);
-
-                                Log.d("RawContactsEntity", "getColumnName._ID: " + mimetype);
-                                Log.d("RawContactsEntity", "getColumnName._ID: " + mimetypecol);
-
-                                Log.d("RawContactsEntity", "RawContacts._ID: " + sourceId);
-                                Log.d("RawContactsEntity", "Raw DATA_ID: " + dataid);
-                                Log.d("RawContactsEntity", "Raw _ID: " + id);
-                                Log.d("RawContactsEntity", "Raw data: " + data);
-//                                Log.d("RawContactsEntity", "Raw deleted: " + deleted);
-                                Log.d("RawContactsEntity", "Raw deletedEntity: " + deletedEntity);
-                                Log.d("RawContactsEntity", "Raw MIMETYPE: " + mimetype);
-                                if (sourceId.equals(id)) {
+                                if (sourceId.equals(id) && mimetype.equals("vnd.android.cursor.item/phone_v2")) {
                                     contactModel = new ContactModel(data, deletedEntity, lastContacted);
                                 }
                             }
