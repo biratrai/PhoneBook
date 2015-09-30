@@ -6,25 +6,35 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract.RawContacts;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
 
 import java.util.ArrayList;
+
+import butterknife.Bind;
 
 import static android.provider.ContactsContract.RawContactsEntity;
 
 public class ContactsList extends AppCompatActivity {
 
-    TextView outputText;
-    boolean contact = false;
+    @Bind(R.id.recyclerViewMovie)
+    RecyclerView mMovieRecyclerView;
+    ContactModel mContactModel;
+    ContactAdapter mContactAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contacts_list);
-        outputText = (TextView) findViewById(R.id.textView1);
+
+        // Initialize recycler view
+        mMovieRecyclerView = (RecyclerView) findViewById(R.id.recyclerViewMovie);
+        mMovieRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        // Query to fetch Contacts
         fetchContacts();
     }
 
@@ -84,91 +94,117 @@ public class ContactsList extends AppCompatActivity {
         // Query ContactsContract.RawContacts table
 //        Uri entityUri = Uri.withAppendedPath(RAW_CONTENT_URI, RawContacts.Entity.CONTENT_DIRECTORY);
         Cursor c = getContentResolver().query(RAW_CONTENT_URI,
-                new String[]{RawContacts.CONTACT_ID, RawContacts.LAST_TIME_CONTACTED, RawContacts._ID}, null, null, null);
+                new String[]{RawContacts.DELETED, RawContacts.LAST_TIME_CONTACTED, RawContacts._ID, RawContacts.CONTACT_ID}, null, null, null);
         if (c.getCount() > 0) {
             try {
                 while (c.moveToNext()) {
                     String sourceId = c.getString(2);
                     String lastContacted = (c.getString(1));
-                    Log.d("MYRAWID", "Contact_ID: " + c.getString(0));
+                    boolean deleted = Boolean.parseBoolean(c.getString(0));
+                    Log.d("MYRAWID", "Deleted: " + c.getString(0));
                     Log.d("MYRAWID", "Raw Contact_ID: " + c.getColumnName(2));
                     Log.d("MYRAWID", "_ID: " + c.getString(2));
                     Log.d("MYRAWID", "Raw Deleted: " + c.getString(1));
+                    Log.d("MYRAWID", "Raw CONTACT_ID: " + c.getString(3));
                     Log.d("MYRAWID", "--------------------------------");
-                    outputText.setText(c.getString(0));
+//                    outputText.setText(c.getString(0));
                     mContactsId.add(sourceId);
 
                     Uri rawContactUri = ContentUris.withAppendedId(RawContacts.CONTENT_URI, Long.parseLong(sourceId));
                     Uri entityUri = Uri.withAppendedPath(rawContactUri, RawContacts.Entity.CONTENT_DIRECTORY);
+
                     Cursor c1 = getContentResolver().query(entityUri,
                             new String[]{
                                     RawContacts.SOURCE_ID,
                                     RawContactsEntity.DATA_ID,
-                                    RawContactsEntity.MIMETYPE,
+                                    RawContactsEntity._ID,
                                     RawContactsEntity.DATA1,
-                                    RawContactsEntity.DELETED
+                                    RawContactsEntity.DELETED,
+                                    RawContactsEntity.MIMETYPE,
                             }, null, null, null);
                     try {
                         while (c1.moveToNext()) {
                             String rawId = c1.getString(0);
-                            Log.d("RawContactsEntity", "Raw sourceId: " + rawId);
+                            Log.d("RawContactsEntity", "Raw SOURCE_ID: " + rawId);
                             if (!c1.isNull(1)) {
                                 String dataid = c1.getString(1);
-                                String mimeType = c1.getString(2);
+                                String id = c1.getString(2);
                                 String data = c1.getString(3);
-                                boolean deleted = Boolean.parseBoolean(c1.getString(4));
-                                Log.d("RawContactsEntity", "Raw mimeType: " + dataid);
-                                Log.d("RawContactsEntity", "Raw mimeType: " + mimeType);
+                                String mimetype = c1.getString(5);
+                                String mimetypecol = c1.getColumnName(5);
+
+                                Log.d("RawContactsEntity", "RawContacts._ID: " + sourceId);
+                                Log.d("RawContactsEntity", "Raw _ID: " + id);
+
+                                Log.d("RawContactsEntity", "getColumnName._ID: " + mimetype);
+                                Log.d("RawContactsEntity", "getColumnName._ID: " + mimetypecol);
+                                String deletedEntity = c1.getString(4);
+                                Log.d("RawContactsEntity", "RawContacts._ID: " + sourceId);
+                                Log.d("RawContactsEntity", "Raw DATA_ID: " + dataid);
+                                Log.d("RawContactsEntity", "Raw _ID: " + id);
                                 Log.d("RawContactsEntity", "Raw data: " + data);
-                                Log.d("RawContactsEntity", "Raw data: " + deleted);
-                                contactModel = new ContactModel(data, deleted, lastContacted);
+                                Log.d("RawContactsEntity", "Raw deleted: " + deleted);
+                                Log.d("RawContactsEntity", "Raw deletedEntity: " + deletedEntity);
+                                Log.d("RawContactsEntity", "Raw MIMETYPE: " + mimetype);
+                                if (sourceId.equals(id)) {
+                                    contactModel = new ContactModel(data, deletedEntity, lastContacted);
+                                }
+                                Log.d("RawContactsEntity", "--------------------------------");
                             }
                         }
-                    }finally {
+                    } finally {
                         c1.close();
                     }
-                    mContactsList.add(contactModel);
+                    if (contactModel != null) {
+                        mContactsList.add(contactModel);
+                    }
                 }
             } finally {
                 c.close();
             }
         }
-        Log.d("RawContactsEntity","Array: "+mContactsList);
+
+        mContactAdapter = new ContactAdapter(this, mContactsList);
+        mMovieRecyclerView.setAdapter(mContactAdapter);
+
+        Log.d("RawContactsEntity", "Array: " + mContactsList);
 //        }
 
-//        for (String rawContactId : mContactsId) {
-//            Uri rawContactUri = ContentUris.withAppendedId(RawContacts.CONTENT_URI, Long.parseLong(rawContactId));
-//            Uri entityUri = Uri.withAppendedPath(rawContactUri, RawContacts.Entity.CONTENT_DIRECTORY);
-//            Cursor c1 = getContentResolver().query(entityUri,
-//                    new String[]{
-//                            RawContacts.SOURCE_ID,
-//                            RawContactsEntity.DATA_ID,
-//                            RawContactsEntity.MIMETYPE,
-//                            RawContactsEntity.DATA1,
-//                            RawContactsEntity.DELETED
-//                    }, null, null, null);
-//
-//
-//            try {
-//                while (c1.moveToNext()) {
-//                    String sourceId = c1.getString(0);
-//                    Log.d("RawContactsEntity", "Raw sourceId: " + sourceId);
-//                    if (!c1.isNull(1)) {
-//                        String dataid = c1.getString(1);
-//                        String mimeType = c1.getString(2);
-//                        String data = c1.getString(3);
-//                        String deleted = c1.getString(4);
-//                        Log.d("RawContactsEntity", "Raw mimeType: " + dataid);
-//                        Log.d("RawContactsEntity", "Raw mimeType: " + mimeType);
-//                        Log.d("RawContactsEntity", "Raw data: " + data);
-//                        Log.d("RawContactsEntity", "Raw data: " + deleted);
-////                        contactModel = new ContactModel(data,deleted,);
-//                    }
-//                }
-//            } finally {
-//                c1.close();
-//            }
-//        }
+        for (String rawContactId : mContactsId) {
+            Uri rawContactUri = ContentUris.withAppendedId(RawContacts.CONTENT_URI, Long.parseLong(rawContactId));
+            Uri entityUri = Uri.withAppendedPath(rawContactUri, RawContacts.Entity.CONTENT_DIRECTORY);
+            Cursor c1 = getContentResolver().query(entityUri,
+                    new String[]{
+                            RawContacts.SOURCE_ID,
+                            RawContactsEntity.DATA_ID,
+                            RawContactsEntity.MIMETYPE,
+                            RawContactsEntity.DATA1,
+                            RawContactsEntity.DELETED
+                    }, null, null, null);
+
+
+            try {
+                while (c1.moveToNext()) {
+                    String sourceId = c1.getString(0);
+                    Log.d("RawContactsEntity", "Raw sourceId: " + sourceId);
+                    if (!c1.isNull(1)) {
+                        String dataid = c1.getString(1);
+                        String mimeType = c1.getString(2);
+                        String data = c1.getString(3);
+                        String deleted = c1.getString(4);
+//                        Log.d("RawContactsEntity", "Raw dataid: " + c1.getString(0));
+                        Log.d("RawContactsEntity", "Raw dataid: " + dataid);
+                        Log.d("RawContactsEntity", "Raw mimeType: " + mimeType);
+                        Log.d("RawContactsEntity", "Raw data: " + data);
+                        Log.d("RawContactsEntity", "Raw deleted: " + deleted);
+                        Log.d("RawContactsEntity", "--------------------------------");
+//                        contactModel = new ContactModel(data,deleted,);
+                    }
+                }
+            } finally {
+                c1.close();
+            }
+        }
 
 //        // Query for ContactsContract.Data table
 //        Cursor c2 = getContentResolver().query(Data.CONTENT_URI,
@@ -186,7 +222,7 @@ public class ContactsList extends AppCompatActivity {
 //                Log.d("MYNEWID", "--------------------------------");
 //            }
 //        }
-//        Log.d("MYID", "mContactsId: " + mContactsId);
+        Log.d("MYID", "mContactsId: " + mContactsId);
     }
 
     @Override
